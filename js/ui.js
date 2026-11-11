@@ -221,6 +221,14 @@ function renderDetail() {
 
 function renderConflicts() {
   const list = shownConflicts(state.view);
+  // Hold the panel still while an advisory is under the pointer, so it cannot change or
+  // move before the click — but only while its live preview is still conflict-free.
+  if (hoverAdv) {
+    const stillOpen = list.some((c) => c.a.cs === hoverAdv.cs || c.b.cs === hoverAdv.cs);
+    const stillSafe = state.preview?.cs === hoverAdv.cs && !state.preview.losses.length;
+    if (stillOpen && stillSafe) return;
+    hoverAdv = null;
+  }
   if (!list.length) {
     el.conflicts.innerHTML = `<li class="empty">${i18n("cf.none")}</li>`;
     return;

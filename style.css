@@ -289,7 +289,9 @@ button.mini {
 }
 
 .cmd-probe {
-  min-height: 1.3em;
+  /* two lines reserved so a preview does not push the conflict panel under the cursor */
+  line-height: 1.3;
+  min-height: 2.6em;
   margin-top: 6px;
   font-size: 11px;
   color: var(--preview);

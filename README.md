@@ -1,7 +1,14 @@
 # ATC Radar Simulator
 
+[![Deploy](https://github.com/fmcoskun/atc-radar-sim/actions/workflows/pages.yml/badge.svg)](https://github.com/fmcoskun/atc-radar-sim/actions/workflows/pages.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 A browser-based air traffic control radar simulator around Istanbul Airport (LTFM), with an optional
 live mode that shows real aircraft from the OpenSky Network.
+
+**Try it:** https://fmcoskun.github.io/atc-radar-sim/
+
+![Hovering a resolution advisory previews the new path; clicking it issues the clearance and the conflict is resolved](docs/demo.gif)
 
 The interface is in English; a Turkish translation can be selected with the **EN · TR** button in the
 top-right corner (the choice is remembered). Aviation phraseology (HDG, FL, readbacks) stays English.
@@ -73,7 +80,8 @@ separation with someone, the line turns amber, the point is marked with a red �
 **Resolution advisories:** up to three advisories appear under each conflict in **CONFLICT ANALYSIS**: a level
 change, a 20–60° turn, speed control, breaking off the approach (`HDG … FL …`), or a vertical split of both
 aircraft (`A FL190 + B FL170`). Each one must keep the pair 0.5 NM beyond the minimum for 4 minutes without
-creating a new conflict. Click to apply. In training mode they are hidden; **HINT** reveals them for 25 points.
+creating a new conflict. Hover to preview, click to apply; the list holds still while the pointer is on an
+advisory, as long as its preview stays conflict-free. In training mode they are hidden; **HINT** reveals them for 25 points.
 
 ## Separation and scoring
 
@@ -128,3 +136,7 @@ RAMOS, VEDAT, OLMAK, PELIT, SEDEF, KOPRU.
 
 The fix, airway and area names in the simulation are fictional and do not represent real Istanbul airspace;
 live aircraft data comes from the OpenSky Network.
+
+## License
+
+[MIT](LICENSE). This is a training and entertainment simulator, not for operational use.
