@@ -1,0 +1,12 @@
+{
+  "name": "atc-radar-sim",
+  "version": "1.0.0",
+  "description": "Browser-based air traffic control radar simulator around Istanbul Airport (LTFM) with conflict probe, resolution advisories and optional live OpenSky traffic.",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/"
+  }
+}

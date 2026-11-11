@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATC Radar</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23031203' stroke='%2300ff66' stroke-width='2'/%3E%3Cpath d='M16 16 L16 3' stroke='%2300ff66' stroke-width='2'/%3E%3Ccircle cx='22' cy='11' r='2' fill='%2300ff66'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ===== HUD HEADER ===== -->
+    <header class="hud">
+      <div class="brand">◉ RADAR <span>ATC SIM</span></div>
+      <div class="hud-item"><span class="k">UTC</span><span class="v" id="utc">--:--:--Z</span></div>
+      <div class="hud-item"><span class="k">MODE</span><span class="v" id="mode">TERMINAL</span></div>
+      <div class="hud-item"><span class="k">SRC</span><span class="v" id="src">SIM</span></div>
+      <div class="hud-item"><span class="k">TARGETS</span><span class="v" id="targets">0</span></div>
+      <div class="hud-item"><span class="k">WIND</span><span class="v" id="wind">---/--</span></div>
+      <div class="hud-item"><span class="k">ARR/DEP</span><span class="v" id="arrdep">0/0</span></div>
+      <div class="hud-item" id="latency-item" hidden><span class="k">LATENCY</span><span class="v" id="latency">-- ms</span></div>
+      <div class="hud-item" id="score-item" hidden>
+        <span class="k">SCORE</span><span class="v" id="score">0</span><span class="k" id="score-detail"></span>
+      </div>
+      <div class="hud-item"><span class="k">SYS</span><span class="v" id="sys">OK</span></div>
+      <button id="lang" class="lang" type="button">EN · TR</button>
+    </header>
+
+    <!-- ===== LEFT: TARGET LIST + EVENT LOG ===== -->
+    <aside class="panel panel-left">
+      <section class="list-section">
+        <h2 data-i18n="panel.targets">TARGET LIST</h2>
+        <table class="targets">
+          <thead>
+            <tr>
+              <th data-sort="cs">CALLSIGN</th>
+              <th data-sort="alt">FL</th>
+              <th data-sort="gs">GS</th>
+              <th data-sort="hdg">HDG</th>
+            </tr>
+          </thead>
+          <tbody id="target-rows"></tbody>
+        </table>
+      </section>
+      <section class="log-section">
+        <h2><span data-i18n="panel.log">EVENT LOG</span>
+          <button id="log-csv" class="mini" data-i18n="btn.csv" data-i18n-title="btn.csvTitle">CSV ⇩</button></h2>
+        <ul id="log" class="log"></ul>
+      </section>
+    </aside>
+
+    <!-- ===== CENTER: RADAR ===== -->
+    <main class="stage">
+      <div class="radar-wrap">
+        <canvas id="radar" data-i18n-aria="radar.aria"></canvas>
+        <div class="crt" aria-hidden="true"></div>
+      </div>
+      <p class="hint" id="hint"></p>
+    </main>
+
+    <!-- ===== RIGHT: DETAILS, COMMANDS, CONFLICTS ===== -->
+    <aside class="panel panel-right">
+      <h2 data-i18n="panel.detail">TARGET DATA</h2>
+      <div class="detail">
+        <div id="detail"></div>
+        <button id="proj-toggle" hidden></button>
+      </div>
+
+      <section id="cmd-panel" class="cmd-panel" hidden>
+        <h2 data-i18n="panel.cmd">CLEARANCE</h2>
+        <form id="cmd-form" class="cmd-form" autocomplete="off">
+          <label>HDG<input id="cmd-hdg" type="number" min="1" max="360" placeholder="270"></label>
+          <label>FL<input id="cmd-fl" type="number" min="10" max="450" placeholder="240"></label>
+          <label>SPD<input id="cmd-spd" type="number" min="120" max="500" placeholder="280"></label>
+          <button type="submit" data-i18n="btn.apply">APPLY</button>
+        </form>
+        <div class="cmd-row">
+          <select id="cmd-dct" data-i18n-aria="dct.aria"><option value="" data-i18n="dct.placeholder">DCT …</option></select>
+          <button id="cmd-ils" type="button">ILS 35L</button>
+          <button id="cmd-nav" type="button" data-i18n="btn.nav" data-i18n-title="btn.navTitle">NAV</button>
+          <button id="cmd-res" type="button" data-i18n="btn.res" data-i18n-title="btn.resTitle">RES SPD</button>
+        </div>
+        <input id="cmd-line" class="cmd-line" autocomplete="off" spellcheck="false"
+               data-i18n-placeholder="cmd.linePlaceholder">
+        <div id="cmd-probe" class="cmd-probe" role="status"></div>
+        <div id="cmd-msg" class="cmd-msg" role="status"></div>
+        <h3 data-i18n="panel.squawk">SQUAWK / EMERGENCY</h3>
+        <div class="cmd-row emg">
+          <button type="button" data-sq="7700">7700</button>
+          <button type="button" data-sq="7600">7600</button>
+          <button type="button" data-sq="7500">7500</button>
+          <button type="button" data-sq="reset" data-i18n="btn.normal">NORMAL</button>
+        </div>
+      </section>
+
+      <h2 data-i18n="panel.conflicts">CONFLICT ANALYSIS</h2>
+      <ul id="conflicts" class="conflicts"></ul>
+    </aside>
+
+    <!-- ===== FOOTER CONTROLS ===== -->
+    <footer class="controls">
+      <div class="row">
+        <div class="ctl">
+          <span class="k" data-i18n="ctl.range">RANGE</span>
+          <div class="btn-group" id="range-group">
+            <button data-range="5">5</button>
+            <button data-range="10">10</button>
+            <button data-range="15" class="active">15</button>
+            <button data-range="30">30</button>
+            <button data-range="60">60</button>
+          </div>
+          <span class="k">NM</span>
+        </div>
+        <div class="ctl">
+          <span class="k" data-i18n="ctl.sweep">SWEEP</span>
+          <input type="range" id="rpm" min="5" max="30" step="1" value="15">
+          <span class="v" id="rpm-val">15 RPM</span>
+        </div>
+        <div class="ctl">
+          <span class="k" data-i18n="ctl.sim">SIM</span>
+          <div class="btn-group" id="speed-group">
+            <button data-speed="1" class="active">1x</button>
+            <button data-speed="2">2x</button>
+            <button data-speed="4">4x</button>
+            <button data-speed="8">8x</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <button id="play" class="wide"></button>
+          <button id="ruler" class="wide" data-i18n="btn.ruler">⟷ RULER</button>
+          <button id="sound" class="wide"></button>
+        </div>
+        <div class="ctl">
+          <span class="k">T+</span><span class="v" id="simtime">00:00:00</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="ctl">
+          <span class="k" data-i18n="ctl.layers">LAYERS</span>
+          <div class="btn-group" id="layer-group">
+            <button data-layer="map" class="active" data-i18n="layer.map">MAP</button>
+            <button data-layer="wx" class="active" data-i18n="layer.wx">WX</button>
+            <button data-layer="areas" class="active" data-i18n="layer.areas">AREAS</button>
+            <button data-layer="clutter" class="active" data-i18n="layer.clutter">CLUTTER</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <span class="k">FL</span>
+          <input type="number" id="fl-min" value="0" min="0" max="600" step="10" data-i18n-aria="fl.minAria">
+          <span class="k">–</span>
+          <input type="number" id="fl-max" value="600" min="0" max="600" step="10" data-i18n-aria="fl.maxAria">
+        </div>
+        <div class="ctl">
+          <button id="training" class="wide"></button>
+          <button id="source" class="wide"></button>
+        </div>
+        <div class="ctl">
+          <span class="k" data-i18n="ctl.scenario">SCENARIO</span>
+          <select id="scenario" data-i18n-aria="scn.aria">
+            <option value="random" data-i18n="scn.random">Random traffic</option>
+            <option value="crossing" data-i18n="scn.crossing">Crossing airways</option>
+            <option value="approach" data-i18n="scn.approach">Approach rush</option>
+            <option value="emergency" data-i18n="scn.emergency">Emergency</option>
+            <option value="file" id="scn-file-opt" hidden></option>
+          </select>
+          <button id="scn-reload" data-i18n-title="scn.reloadTitle">↻</button>
+          <button id="scn-load" data-i18n="scn.load">LOAD…</button>
+          <button id="scn-save" data-i18n="scn.save">SAVE</button>
+          <input type="file" id="scn-file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+
+      <div class="row timeline">
+        <button id="live-btn" class="active" data-i18n="btn.now">● NOW</button>
+        <input type="range" id="timeline" min="0" max="1000" value="1000" data-i18n-aria="timeline.aria">
+        <span class="v" id="timeline-label"></span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/sim.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
